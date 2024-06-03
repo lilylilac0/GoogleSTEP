@@ -72,30 +72,32 @@ class Wikipedia:
                 print(self.titles[dst], link_count_max)
         print()
 
+
     def get_key_by_value(self, value):
         for k, v in self.titles.items():
             if v == value:
                 return k
         return None
     
+    # Construct and return the shortest path from the start page to the goal page.
+    # |goal_id| (int): The ID of the goal page.
+    # |visited| (dict): A dictionary representing the visited pages during BFS traversal.
+    # Returns:
+    #    list: A list representing the shortest path from the start page to the goal page.
+    def follow_path(self, start_id, goal_id, visited):
+        path = []
+        current_id = goal_id
+        while current_id != start_id:
+            path.insert(0, self.titles[current_id])
+            current_id = visited[current_id]
+        path.insert(0, self.titles[start_id])
+        return path
+    
     # Find the shortest path.
     # |start|: The title of the start page.
     # |goal|: The title of the goal page.
     # Based on BFS.
     def find_shortest_path(self, start, goal):
-        # Construct and return the shortest path from the start page to the goal page.
-        # |goal_id| (int): The ID of the goal page.
-        # |visited| (dict): A dictionary representing the visited pages during BFS traversal.
-        # Returns:
-        #    list: A list representing the shortest path from the start page to the goal page.
-        def follow_path(goal_id, visited):
-            path = []
-            current_id = goal_id
-            while current_id != start_id:
-                path.insert(0, self.titles[current_id])
-                current_id = visited[current_id]
-            path.insert(0, start)
-            return path
         start_id = self.get_key_by_value(start)
         goal_id = self.get_key_by_value(goal)
         que = deque()
@@ -106,15 +108,16 @@ class Wikipedia:
             if node is None or goal_id is None:
                 break
             elif node == goal_id:
+                print(node, goal_id)
                 print(f"The shortest path from {start} to {goal} is: ")
-                path = follow_path(goal_id, visited)
+                path = self.follow_path(start_id, goal_id, visited)
                 print(path)
                 print()
                 return True
             else:
                 for neighbor_id in self.links[node]:
                     if neighbor_id not in visited:
-                        visited[neighbor_id] = node
+                        visited[neighbor_id] = node     # link: node -> neighbor 
                         que.append(neighbor_id)
         print(f"There is no path from {start} to {goal}.")
         print()
@@ -125,7 +128,8 @@ class Wikipedia:
     def find_most_popular_pages(self):
         length = len(self.titles)
         current_rank_list = {id: 1.0 for id in self.titles.keys()}
-        threshold = 0.1
+        previous_updates = 0
+        threshold = 0.01
         while True:
             updated_rank_list = {id: 0 for id in self.titles.keys()}
             updates = 0
@@ -136,12 +140,13 @@ class Wikipedia:
                     for neighbor_id in self.links[id]:
                         updated_rank_list[neighbor_id] +=  0.85 * rank / len(self.links[id])
                     updates += 0.15 * rank / length
-            if updates < threshold:
+            if updates < threshold or (updates - previous_updates) < threshold:
                 break
             else:
                 for i in self.titles.keys():
                     updated_rank_list[i] += updates
             current_rank_list = updated_rank_list.copy()
+            previous_updates = updates
 
         print("The most popular page is: ")
         highest_score_id = max(current_rank_list, key = current_rank_list.get)
@@ -168,5 +173,6 @@ if __name__ == "__main__":
     wikipedia.find_shortest_path("A", "C")
     wikipedia.find_shortest_path("A", "E")
     wikipedia.find_shortest_path("E", "A")
+    wikipedia.find_shortest_path("A","A")
     wikipedia.find_shortest_path("渋谷", "パレートの法則")
     wikipedia.find_most_popular_pages()
