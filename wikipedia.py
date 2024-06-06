@@ -39,7 +39,6 @@ class Wikipedia:
         print("Finished reading %s" % links_file)
         print()
 
-
     # Find the longest titles. This is not related to a graph algorithm at all
     # though :)
     def find_longest_titles(self):
@@ -81,7 +80,7 @@ class Wikipedia:
     
     # Construct and return the shortest path from the start page to the goal page.
     # |goal_id| (int): The ID of the goal page.
-    # |visited| (dict): A dictionary representing the visited pages during BFS traversal.
+    # |visited| (dict): A table representing the visited pages during BFS traversal.
     # Returns:
     #    list: A list representing the shortest path from the start page to the goal page.
     def follow_path(self, start_id, goal_id, visited):
@@ -108,7 +107,6 @@ class Wikipedia:
             if node is None or goal_id is None:
                 break
             elif node == goal_id:
-                print(node, goal_id)
                 print(f"The shortest path from {start} to {goal} is: ")
                 path = self.follow_path(start_id, goal_id, visited)
                 print(path)
@@ -121,12 +119,14 @@ class Wikipedia:
                         que.append(neighbor_id)
         print(f"There is no path from {start} to {goal}.")
         print()
-        return False  
+        return False
 
 
     # Calculate the page ranks and print the most popular pages.
     def find_most_popular_pages(self):
         length = len(self.titles)
+        # current_rank_list = [] リストにすると早い。dictの場合はメモリを使う→キャッシュに入らないので遅くなる
+        # updates_rank_listもリストにする
         current_rank_list = {id: 1.0 for id in self.titles.keys()}
         previous_updates = 0
         threshold = 0.01
@@ -134,8 +134,10 @@ class Wikipedia:
             updated_rank_list = {id: 0 for id in self.titles.keys()}
             updates = 0
             for id, rank in current_rank_list.items():
+                # self.linksをlistでなくsetにするとデータが大きくなった時に早くなるよ
                 if id not in self.links:
                     updates += rank / length
+                    print("not in self.titles: ", updates)
                 else:
                     for neighbor_id in self.links[id]:
                         updated_rank_list[neighbor_id] +=  0.85 * rank / len(self.links[id])
@@ -152,14 +154,44 @@ class Wikipedia:
         highest_score_id = max(current_rank_list, key = current_rank_list.get)
         print(self.titles[highest_score_id])
         print()
+    
+    # Insert id in table, then sort the table.
+    # Used in find_isolated_pages
+    def insert_and_sort(self, targes_id, table):
+        lo = 0
+        hi = len(table) - 1
+        while lo <= hi:
+            m = (lo + hi) //2   # //は、割り算の結果を切り捨てて整数値とする
+            if targes_id < table[m]:
+                hi = m - 1
+            elif targes_id > table[m]:
+                lo = m + 1
+            else: # When the target is found
+                return (True, table)        
+        table.insert(lo, targes_id)
+        return (False, table)
+    
+    # Find isolated pages.
+    def find_isolated_pages(self):
+        connected_pages_id = []
+        for id, dst in self.links.items():
+            for i in dst:
+                r  = self.insert_and_sort(i, connected_pages_id)
+                connected_pages_id = r[1]
+            r = self.insert_and_sort(id, connected_pages_id)
+            connected_pages_id = r[1]
+            print(id)
         
-
-    # Do something more interesting!!
-    def find_something_more_interesting(self):
-        #------------------------#
-        # Write your code here!  #
-        #------------------------#
-        pass
+        isolated_pages = []
+        for id in self.titles.keys():
+            r = self.insert_and_sort(id, connected_pages_id)
+            if not r[0]:
+                isolated_pages.append(self.titles[id])
+        
+        if not isolated_pages:
+            print("There are no isolated pages")
+        else:
+            print("The isolated pages are ", isolated_pages)
 
 
 if __name__ == "__main__":
@@ -173,6 +205,7 @@ if __name__ == "__main__":
     wikipedia.find_shortest_path("A", "C")
     wikipedia.find_shortest_path("A", "E")
     wikipedia.find_shortest_path("E", "A")
-    wikipedia.find_shortest_path("A","A")
+    wikipedia.find_shortest_path("A", "A")
     wikipedia.find_shortest_path("渋谷", "パレートの法則")
     wikipedia.find_most_popular_pages()
+    wikipedia.find_isolated_pages()
