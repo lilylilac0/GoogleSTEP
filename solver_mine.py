@@ -20,6 +20,7 @@ def distance(city1, city2):
 #                    注意：つながっているすべての点から辿れる辺かつ追加しても閉路にならないような辺であることが条件
 #               4, 最終的に出来上がったTが最小全域木である
 #           2, Tの枝を複製したグラフを作り、一筆書きで一周する
+#               オイラー路（何回でも同じ辺、頂点を通って良い）を作る
 #           3, すでに訪れた都市は再度訪れないようにし、全都市をちょうど一回ずつ通る閉路を作る
 #               Hierholzer's Algorithm
 #               →・ある点から始めてまたその点に戻るパスを見つけて（閉路）、通ったパスを除去
@@ -74,7 +75,6 @@ def prim(cities):
     return edge
 
 # オイラーグラフから、一筆書きの経路を求める
-# Hierholzer's Algorithm
 def create_eulerian_path(edges):
     graph = {i:[] for i in range(len(edges) * 2)}
     # 逆方向の辺も追加して、オイラーグラフにする
@@ -100,6 +100,7 @@ def create_eulerian_path(edges):
     return path
 
 # オイラー路からハミルトン閉路を生成する
+# Hierholzer's Algorithm
 def create_hamiltonian_path(path):
     tour = []
     #　すでにたどった頂点を記録
